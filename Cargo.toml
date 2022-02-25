@@ -1,15 +1,16 @@
 [package]
-name = "WordlCrush"
+name = "wordl_crush"
 version = "0.0.1"
 authors = ["Tyson <t@zaxyz.com>"]
 edition = "2021"
+repository = "https://github.com/tbiscuit/wordl-crusher"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 
 [[bin]]
-name = "wordl_crush"
+name = "wordl-crush"
 path = "src/main.rs"
 
 [dev-dependencies]

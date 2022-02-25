@@ -1,5 +1,7 @@
 // Entry point for WordlCrush
 
+use wordl_crush::{Solver};
+
 use std::fs;
 
 fn load_allowed(fname: &str) -> Vec<String> {
