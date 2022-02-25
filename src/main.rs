@@ -4,20 +4,6 @@ use wordl_crush::{Solver};
 
 use std::fs;
 
-fn load_list_from_file(fname: &str) -> Vec<String> {
-    let raw_text_or_err = fs::read_to_string(fname);
-    let mut o: Vec<String> = Vec::new();
-    if let Ok(raw_text) = raw_text_or_err {
-        let raw_list = raw_text.split("\n");
-        for entry in raw_list {
-            o.push(entry.trim().to_string());
-        }
-    } else {
-        panic!("Cannot load {}", fname);
-    }
-    o
-}
-
 #[macro_export]
 macro_rules! path_up {
     ($deflt: expr) => {
@@ -43,6 +29,24 @@ macro_rules! path_up {
     }
 }
 
+fn load_list_from_file(fname: &str) -> Vec<String> {
+    let raw_text_or_err = fs::read_to_string(fname);
+    let mut o: Vec<String> = Vec::new();
+    if let Ok(raw_text) = raw_text_or_err {
+        let raw_list = raw_text.split("\n");
+        for entry in raw_list {
+            o.push(entry.trim().to_string());
+        }
+    } else {
+        let open_char = fname.chars().next().unwrap();
+        if open_char == '/' || open_char == '\\' {
+            panic!("Cannot load {}", fname);
+        } else {
+            panic!("Cannot load (implied path) {}", path_up!(fname));
+        }
+    }
+    o
+}
 
 #[macro_export]
 macro_rules! load_wlist {
