@@ -1,0 +1,13 @@
+[package]
+name = "WordlCrush"
+version = "0.0.1"
+authors = ["Tyson <t@zaxyz.com>"]
+edition = "2021"
+
+[dependencies]
+
+[[bin]]
+name = "wordl_crush"
+path = "src/main.rs"
+
+[dev-dependencies]
