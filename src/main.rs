@@ -1,6 +1,6 @@
 // Entry point for WordlCrush
 
-use wordle_crush::{Solver};
+use wordle_crush::{Solver, Oracle};
 
 use std::fs;
 
@@ -90,9 +90,10 @@ fn main() {
     println!("Loaded {} wordl allowed words, with {} possible solutions",
              wordl_allowed.len(), wordl_possible.len());
     let try_words = wordl_possible.clone();
+    let solver = Solver::create(wordl_allowed.clone(), wordl_possible.clone());
     for word in try_words {
-        let solver = Solver::create(wordl_allowed.clone(), wordl_possible.clone());
-        let guesses = solver.solve(word.clone());
+        let oracle = Oracle::create(&word);
+        let guesses = solver.solve(oracle);
         println!("used {} guesses to solve {}", guesses.len(), word);
     }
 }

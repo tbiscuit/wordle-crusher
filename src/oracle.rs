@@ -9,17 +9,17 @@ pub enum Square {
 }
 
 pub struct Reply {
-    letters: Vec<Square>,
+    lights: Vec<Square>,
 }
 
 impl Reply {
     pub fn all_gray() -> Reply {
         let mut r: Vec<Square> = Vec::new();
-        for i in 0..5 {
+        for _ in 0..5 {
             r.push(Square::GRAY);
         }
         Reply {
-            letters: r,
+            lights: r,
         }
     }
 
@@ -29,16 +29,57 @@ impl Reply {
             if pos == i {
                 r.push(color.clone());
             } else {
-                r.push(self.letters[i].clone());
+                r.push(self.lights[i].clone());
             }
         }
         Reply {
-            letters: r
+            lights: r
         }
     }
 
     pub fn light(&self, pos: usize) -> &Square {
-        &self.letters[pos]
+        &self.lights[pos]
+    }
+
+    pub fn all_green(&self) -> bool {
+        for light in &self.lights {
+            if *light != Square::GREEN {
+                return false;
+            }
+        }
+        true
+    }
+
+    pub fn is_green(&self, pos: usize) -> bool {
+        self.lights[pos] == Square::GREEN
+    }
+
+    pub fn is_yellow(&self, pos: usize) -> bool {
+        self.lights[pos] == Square::YELLOW
+    }
+
+    pub fn is_gray(&self, pos: usize) -> bool {
+        self.lights[pos] == Square::GRAY
+    }
+}
+
+impl ToString for Reply {
+    fn to_string(&self) -> String {
+        let mut s = String::new();
+        for light in self.lights.iter() {
+            match light {
+                Square::GREEN => {
+                    s.push('G');
+                },
+                Square::YELLOW => {
+                    s.push('Y');
+                },
+                Square::GRAY => {
+                    s.push(' ');
+                }
+            }
+        }
+        s
     }
 }
 
