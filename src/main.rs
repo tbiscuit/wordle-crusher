@@ -1,6 +1,6 @@
 // Entry point for WordlCrush
 
-use wordl_crush::{Solver};
+use wordle_crush::{Solver};
 
 use std::fs;
 
@@ -69,11 +69,11 @@ macro_rules! load_wlist {
     }
 }
 
-fn allowed_guesses_fname(args: Vec<String>) -> String {
+fn allowed_guesses_fname(args: &Vec<String>) -> String {
     let mut arg_iter = args.iter();
     load_wlist!(arg_iter, "--allowed", "data/wordle-allowed-guesses.txt");
 }
-fn possible_guesses_fname(args: Vec<String>) -> String {
+fn possible_guesses_fname(args: &Vec<String>) -> String {
     let mut arg_iter = args.iter();
     load_wlist!(arg_iter, "--possible", "data/wordle-possible-solutions.txt");
 }
@@ -85,8 +85,8 @@ fn main() {
     // into a Vec like it's 1999.
     let args: Vec<String> = env::args().collect();
 
-    let wordl_allowed = load_list_from_file(&allowed_guesses_fname(args.clone()));
-    let wordl_possible = load_list_from_file(&possible_guesses_fname(args));
+    let wordl_allowed = load_list_from_file(&allowed_guesses_fname(&args));
+    let wordl_possible = load_list_from_file(&possible_guesses_fname(&args));
     println!("Loaded {} wordl allowed words, with {} possible solutions",
              wordl_allowed.len(), wordl_possible.len());
     let try_words = wordl_possible.clone();

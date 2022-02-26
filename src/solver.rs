@@ -5,6 +5,8 @@ pub struct Solver {
     possible: Vec<String>,
 }
 
+use crate::Oracle;
+
 impl Solver {
     pub fn create(a: Vec<String>, p: Vec<String>) -> Solver{
         Solver {

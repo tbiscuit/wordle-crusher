@@ -1,5 +1,5 @@
 [package]
-name = "wordl_crush"
+name = "wordle_crush"
 version = "0.0.1"
 authors = ["Tyson <t@zaxyz.com>"]
 edition = "2021"
@@ -10,7 +10,7 @@ repository = "https://github.com/tbiscuit/wordl-crusher"
 [dependencies]
 
 [[bin]]
-name = "wordl-crush"
+name = "wordle-crush"
 path = "src/main.rs"
 
 [dev-dependencies]
