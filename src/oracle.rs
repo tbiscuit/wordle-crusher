@@ -116,16 +116,18 @@ impl Oracle {
             }
         }
         // Now hunt for yellow.
+        g_chars = guess.chars();
         for i in 0..5 {
             if let Some(g) = g_chars.next() {
                 if *r.light(i) == Square::GREEN {
                     continue;
                 }
+                s_chars = secret.chars();
                 for j in 0..5 {
-                    if *used.light(j) != Square::GRAY {
-                        continue;
-                    }
                     if let Some(s) = s_chars.next() {
+                        if *used.light(j) != Square::GRAY {
+                            continue;
+                        }
                         if s == g {
                             r = r.with_set_light(i, Square::YELLOW);
                             used = used.with_set_light(j, Square::YELLOW);

@@ -15,7 +15,7 @@ impl Solver {
         Solver {
             allowed: a,
             possible: p,
-            loud_mode: true,
+            loud_mode: false,
         }
     }
 
@@ -32,7 +32,7 @@ impl Solver {
             }
             known_possible = Self::reduce_set(&good_guess, reply, &known_possible, self.loud_mode);
             death_clock += 1;
-            if death_clock > 10 {
+            if death_clock > 12 {
                 panic!("Solver is terrible and has been sacked!");
             }
         }
@@ -55,11 +55,16 @@ impl Solver {
             }
         }
         if loud {
-            print!("Guessed {}, Got {}, Reduced set from {} entries to {{", guess, reply.to_string(), possible.len());
-            for kp in known_possible.iter() {
-                print!("{}, ", kp);
+            print!("Guessed {}, Got {}, Reduced set from {} entries to ", guess, reply.to_string(), possible.len());
+            if known_possible.len() < 10 {
+                print!("{{");
+                for kp in known_possible.iter() {
+                    print!("{}, ", kp);
+                }
+                println!("}}");
+            } else {
+                println!("{} entries", known_possible.len());
             }
-            println!("}}");
         }
         known_possible
     }
@@ -106,7 +111,7 @@ impl Solver {
         g_iter = guess.chars();
         for g in g_iter { // only iterate over constraints provided by the reply to the guess.
             let g_get = guess_map.get(&g);
-            let w_get = guess_map.get(&g);
+            let w_get = word_map.get(&g);
             if let Some(n) = g_get {
                 match w_get {
                     None => {
@@ -114,8 +119,8 @@ impl Solver {
                         return false;
                     },
                     Some(m) => {
-                        if m != n {
-                            // Word contains the letter but in an incorrect quantity.
+                        if m < n {
+                            // Word should contain at least n copies of this letter.
                             return false;
                         }
                     }
