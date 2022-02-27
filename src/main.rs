@@ -85,7 +85,7 @@ fn thread_count_arg(args: &Vec<String>) -> String {
 
 fn max_search_arg(args: &Vec<String>) -> String {
     let mut arg_iter = args.iter();
-    extract_arg!(arg_iter, "--thread_count", "30");
+    extract_arg!(arg_iter, "--max_search", "30");
 }
 
 fn loud_mode(args: &Vec<String>) -> bool {
