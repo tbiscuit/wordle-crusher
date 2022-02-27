@@ -146,7 +146,7 @@ impl Solver {
         if guess == word {
             return false; // we know the current guess is not a good next guess
         }
-        // are the green ones right?
+        // Green and basic yellow elimination.
         let mut g_iter = guess.chars();
         let mut w_iter = word.chars();
         for i in 0..5 {
@@ -160,9 +160,21 @@ impl Solver {
                         }
                     }
                 }
+            } else if reply.is_yellow(i) {
+                // Basic yellow elimination, e.g., a yellow r in position 1 means an r cannot be there.
+                if let Some(g) = cur_g {
+                    if let Some(w) = cur_w {
+                        if g == w {
+                            return false
+                        }
+                    }
+                }
+            }        
+        }
             }
         }
-        // Yellow is tricky because dups are allowed.
+        // Yellow also gets us letter counts to help eliminate some words with duplicate letters,
+        // or to eliminate words that do NOT have duplicate letters that we know to exist.
         g_iter = guess.chars();
         let mut guess_map: HashMap<char, u8> = HashMap::new();
         for i in 0..5 {
