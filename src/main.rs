@@ -49,7 +49,7 @@ fn load_list_from_file(fname: &str) -> Vec<String> {
 }
 
 #[macro_export]
-macro_rules! load_wlist {
+macro_rules! extract_arg {
     ($arg_iter: expr, $flag: expr, $deflt: expr) => {
         loop {
             let arg = $arg_iter.next();
@@ -71,11 +71,30 @@ macro_rules! load_wlist {
 
 fn allowed_guesses_fname(args: &Vec<String>) -> String {
     let mut arg_iter = args.iter();
-    load_wlist!(arg_iter, "--allowed", "data/wordle-allowed-guesses.txt");
+    extract_arg!(arg_iter, "--allowed", "data/wordle-allowed-guesses.txt");
 }
 fn possible_guesses_fname(args: &Vec<String>) -> String {
     let mut arg_iter = args.iter();
-    load_wlist!(arg_iter, "--possible", "data/wordle-possible-solutions.txt");
+    extract_arg!(arg_iter, "--possible", "data/wordle-possible-solutions.txt");
+}
+
+fn thread_count_arg(args: &Vec<String>) -> String {
+    let mut arg_iter = args.iter();
+    extract_arg!(arg_iter, "--thread_count", "10");
+}
+
+fn max_search_arg(args: &Vec<String>) -> String {
+    let mut arg_iter = args.iter();
+    extract_arg!(arg_iter, "--thread_count", "30");
+}
+
+fn loud_mode(args: &Vec<String>) -> bool {
+    for arg in args.iter() {
+        if arg == "--verbose" {
+            return true;
+        }
+    }
+    false
 }
 
 use std::env;
@@ -88,10 +107,21 @@ fn main() {
 
     let wordl_allowed = load_list_from_file(&allowed_guesses_fname(&args));
     let wordl_possible = load_list_from_file(&possible_guesses_fname(&args));
+    let verbose = loud_mode(&args);
     println!("Loaded {} wordl allowed words, with {} possible solutions",
              wordl_allowed.len(), wordl_possible.len());
     let try_words = wordl_possible.clone();
-    let solver = Solver::create(wordl_allowed.clone(), wordl_possible.clone());
+    let tca = thread_count_arg(&args).parse::<u32>();
+    let msa = max_search_arg(&args).parse::<u32>();
+    let mut tc: u32 = 10;
+    let mut ms: u32 = 30;
+    if let Ok(n) = tca {
+        tc = n;
+    }
+    if let Ok(n) = msa {
+        ms = n;
+    }
+    let solver = Solver::create(wordl_allowed.clone(), wordl_possible.clone(), tc, ms, verbose);
     let mut histogram: HashMap<usize, u32> = HashMap::new();
     let mut total_guesses: u32 = 0;
     let mut max_for_one_word: u32 = 0;

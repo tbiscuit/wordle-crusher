@@ -1,3 +1,5 @@
+raise
+nobly
 aback
 abase
 abate
@@ -1305,7 +1307,6 @@ ninja
 ninny
 ninth
 noble
-nobly
 noise
 noisy
 nomad
@@ -1532,7 +1533,6 @@ radar
 radii
 radio
 rainy
-raise
 rajah
 rally
 ralph
