@@ -61,39 +61,57 @@ impl Solver {
             }
         }
         for word in allowed {
-            let hi_score_mut = Arc::new(Mutex::new(0 as usize));
-            let mut join_handles = Vec::new();
-            let lifetime_possibles: Vec<String> = possible.clone();
-            let shared_possibles = Arc::new(lifetime_possibles);
-            let tcu = tc as usize;
-            for offset in 0..tc {
-                let child_possibles = Arc::clone(&shared_possibles);
-                let movable_word = word.clone();
-                let hi_score_shared_mut = hi_score_mut.clone();
-                join_handles.push(thread::spawn(move || {
-                    let mut i = offset as usize;
-                    while i < child_possibles.len() {
-                        let p = &child_possibles[i];
-                        let r = Oracle::compare(&movable_word, p);
-                        let reduced = Self::reduce_set(&movable_word, r, &child_possibles, false);
-                        let mut hi_score = hi_score_shared_mut.lock().unwrap();
-                        if reduced.len() > *hi_score {
-                            *hi_score = reduced.len();
+            // Unfortunately, thread creation is rather expensive in Rust.
+            // Limit the use of the multithreaded version to cases where it will likely help.
+            if possible.len() > tc as usize * 2 {
+                let hi_score_mut = Arc::new(Mutex::new(0 as usize));
+                let mut join_handles = Vec::new();
+                let lifetime_possibles: Vec<String> = possible.clone();
+                let shared_possibles = Arc::new(lifetime_possibles);
+                let tcu = tc as usize;
+                for offset in 0..tc {
+                    let child_possibles = Arc::clone(&shared_possibles);
+                    let movable_word = word.clone();
+                    let hi_score_shared_mut = hi_score_mut.clone();
+                    join_handles.push(thread::spawn(move || {
+                        let mut i = offset as usize;
+                        while i < child_possibles.len() {
+                            let p = &child_possibles[i];
+                            let r = Oracle::compare(&movable_word, p);
+                            let reduced = Self::reduce_set(&movable_word, r, &child_possibles,
+                                                           false);
+                            let mut hi_score = hi_score_shared_mut.lock().unwrap();
+                            if reduced.len() > *hi_score {
+                                *hi_score = reduced.len();
+                            }
+                            std::mem::drop(hi_score); // manual unlock is needed in loops like this
+                            i += tcu;
                         }
-                        std::mem::drop(hi_score); // manual unlock is needed in loops like this
-                        i += tcu;
-                    }
-                }));
-            }
-            // Hold here for a sec...
-            for handle in join_handles.into_iter() {
-                handle.join().unwrap();
-            }
-            // mutex will unlock itself by going out of scope
-            let hi_score = hi_score_mut.lock().unwrap();
-            if *hi_score <= golf_score {
-                golf_score = *hi_score;
-                best_word = word.clone();
+                    }));
+                }
+                // Hold here for a sec...
+                for handle in join_handles.into_iter() {
+                    handle.join().unwrap();
+                }
+                // mutex will unlock itself by going out of scope
+                let hi_score = hi_score_mut.lock().unwrap();
+                if *hi_score <= golf_score {
+                    golf_score = *hi_score;
+                    best_word = word.clone();
+                }
+            } else {
+                let mut hi_score = 0 as usize;
+                for p in possible {
+                    let r = Oracle::compare(&word, &p);
+                    let reduced = Self::reduce_set(&word, r, &possible, false);
+                    if reduced.len() > hi_score {
+                        hi_score = reduced.len();
+                    } 
+                }
+                if hi_score <= golf_score {
+                    golf_score = hi_score;
+                    best_word = word.clone();
+                }
             }
         }
         if best_word.is_empty() {
