@@ -169,8 +169,6 @@ impl Solver {
                         }
                     }
                 }
-            }        
-        }
             }
         }
         // Yellow also gets us letter counts to help eliminate some words with duplicate letters,
