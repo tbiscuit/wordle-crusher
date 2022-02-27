@@ -109,10 +109,10 @@ impl Oracle {
                         used = used.with_set_light(i, Square::GREEN);
                     }
                 } else {
-                    panic!("should not be able to happen!")
+                    panic!("{} should not be able to happen!", secret);
                 }
-            }else {
-                panic!("also should not be able to happen!")
+            } else {
+                panic!("{} also should not be able to happen!", guess);
             }
         }
         // Now hunt for yellow.

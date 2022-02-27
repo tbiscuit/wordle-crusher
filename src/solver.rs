@@ -15,7 +15,7 @@ impl Solver {
         Solver {
             allowed: a,
             possible: p,
-            loud_mode: false,
+            loud_mode: true,
         }
     }
 
@@ -39,12 +39,36 @@ impl Solver {
         o
     }
 
-    fn calculate_guess(_allowed: &Vec<String>, possible: &Vec<String>) -> String {
-        if let Some(w) = possible.iter().next() {
-            return String::from(w);
-        } else {
-            panic!("should not be out of words to guess!");
+    fn calculate_guess(allowed: &Vec<String>, possible: &Vec<String>) -> String {
+        let mut best_word = String::new();
+        let mut golf_score = possible.len();
+        if possible.len() == 1 || possible.len() > 30 {
+            let o = possible.iter().next();
+            if let Some(w) = o {
+                return String::from(w);
+            } else {
+                panic!("Failed to guess!");
+            }
         }
+        for word in allowed {
+            let mut hi_score: usize = 0;
+            for p in possible {
+                // if word were the guess, and possible were the secret...
+                let r = Oracle::compare(word, p);
+                let reduced = Self::reduce_set(&word, r, &possible, false);
+                if reduced.len() > hi_score {
+                    hi_score = reduced.len();
+                }
+            }
+            if hi_score <= golf_score {
+                golf_score = hi_score;
+                best_word = word.clone();
+            }
+        }
+        if best_word.is_empty() {
+            panic!("This algorithm doesn't pick words!");
+        }
+        best_word
     }
 
     fn reduce_set(guess: &str, reply: Reply, possible: &Vec<String>, loud: bool) -> Vec<String> {
