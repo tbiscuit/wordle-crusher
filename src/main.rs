@@ -79,6 +79,7 @@ fn possible_guesses_fname(args: &Vec<String>) -> String {
 }
 
 use std::env;
+use std::collections::HashMap;
 
 fn main() {
     // Rust does not apparently have a good standard way to do arg parsing other than blat them
@@ -91,9 +92,35 @@ fn main() {
              wordl_allowed.len(), wordl_possible.len());
     let try_words = wordl_possible.clone();
     let solver = Solver::create(wordl_allowed.clone(), wordl_possible.clone());
+    let mut histogram: HashMap<usize, u32> = HashMap::new();
+    let mut total_guesses: u32 = 0;
+    let mut max_for_one_word: u32 = 0;
     for word in try_words {
         let oracle = Oracle::create(&word);
         let guesses = solver.solve(oracle);
         println!("used {} guesses to solve {}", guesses.len(), word);
+        total_guesses += guesses.len() as u32;
+        if max_for_one_word < guesses.len() as u32 {
+            max_for_one_word = guesses.len() as u32;
+        }
+        let e = histogram.entry(guesses.len()).or_insert(0);
+        *e += 1;
     }
+    let mut counted: u32 = 0;
+    let mut median: u32 = 0;
+    let average = total_guesses as f32 / wordl_possible.len() as f32;
+    for i in 0..max_for_one_word {
+        let entry = histogram.get(&((i+1) as usize));
+        if let Some(e) = entry {
+            println!("Got {} words in {} guesses", e, i+1);
+            counted += e * (i+1);
+            if median == 0 && counted > total_guesses / 2 {
+                median = i+1;
+            }
+        }
+    }
+    println!("Total Guesses {}", total_guesses);
+    println!("Total Words {}", wordl_possible.len());
+    println!("Average guesses: {}", average);
+    println!("Median guesses: {}", median);
 }
