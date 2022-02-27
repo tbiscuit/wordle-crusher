@@ -16,6 +16,7 @@ use std::sync::{Arc, Mutex};
 
 impl Solver {
     pub fn create(a: Vec<String>, p: Vec<String>, tc: u32, ms: u32, l: bool) -> Solver{
+        println!("Solver created with {} threads, {} length to begin exhaustive search, verbose = {}", tc, ms, l);
         Solver {
             allowed: a,
             possible: p,
