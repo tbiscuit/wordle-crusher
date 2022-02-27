@@ -12,7 +12,6 @@ lanky
 latch
 nadir
 ninja
-crack
 craft
 cramp
 climb
@@ -205,6 +204,7 @@ elide
 elite
 elope
 elude
+crack
 aback
 abase
 abate
