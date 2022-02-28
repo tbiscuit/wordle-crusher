@@ -46,7 +46,7 @@ impl Solver {
         o
     }
 
-    fn calculate_guess(allowed: &Vec<String>, possible: &Vec<String>, tc: u32, ms: usize) -> String {
+    fn calculate_guess(allowed: &Vec<String>, possible: &Vec<String>, tc_flag: u32, ms: usize) -> String {
         let mut best_word = String::new();
         let mut golf_score = possible.len();
         // If there is a better chance by guessing one of the few remaining words or
@@ -60,10 +60,20 @@ impl Solver {
                 panic!("Failed to guess!");
             }
         }
+        let mut tc = tc_flag;
+        if tc > possible.len() as u32 * 2 {
+            tc = possible.len() as u32 / 2;
+        }
+        // Limit the use of the multithreaded version to cases where it will likely help.
+        let please_use_threads = tc > 5;
         for word in allowed {
-            // Unfortunately, thread creation is rather expensive in Rust.
-            // Limit the use of the multithreaded version to cases where it will likely help.
-            if possible.len() > tc as usize * 2 {
+            if please_use_threads {
+                // Unfortunately, mutex locking is very expensive in Rust, thread creation seems
+                // much faster, so making tc threads * word count is actually faster than having
+                // a thread pool managed by mutexes. This code uses about 4 seconds for a 24
+                // threads per word in allowed ~50 word list to crunch on a low-end Macbook Pro.
+                // TODO: Figure out the Rustacean's way of not using mutexes where mutexes are
+                //       the C++ way.
                 let hi_score_mut = Arc::new(Mutex::new(0 as usize));
                 let mut join_handles = Vec::new();
                 let lifetime_possibles: Vec<String> = possible.clone();
