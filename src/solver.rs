@@ -4,24 +4,26 @@ pub struct Solver {
     allowed: Vec<String>,
     possible: Vec<String>,
     loud_mode: bool,
-    thread_count: u32,
     max_search: usize,
+}
+
+struct MapOut {
+    hi_score: usize,
+    word: String,
 }
 
 use crate::Oracle;
 use crate::Reply;
 use std::collections::HashMap;
-use std::thread;
-use std::sync::{Arc, Mutex};
+use rayon::prelude::*;
 
 impl Solver {
-    pub fn create(a: Vec<String>, p: Vec<String>, tc: u32, ms: u32, l: bool) -> Solver{
-        println!("Solver created with {} threads, {} length to begin exhaustive search, verbose = {}", tc, ms, l);
+    pub fn create(a: Vec<String>, p: Vec<String>, ms: u32, l: bool) -> Solver{
+        println!("Solver created with {} length to begin exhaustive search, verbose = {}", ms, l);
         Solver {
             allowed: a,
             possible: p,
             loud_mode: l,
-            thread_count: tc,
             max_search: ms as usize,
         }
     }
@@ -31,7 +33,7 @@ impl Solver {
         let mut o: Vec<String> = Vec::new();
         let mut death_clock = 0;
         loop {
-            let good_guess = Self::calculate_guess(&self.allowed, &known_possible, self.thread_count, self.max_search);
+            let good_guess = Self::calculate_guess(&self.allowed, &known_possible, self.max_search);
             o.push(good_guess.clone());
             let reply = oracle.guess(&good_guess);
             if reply.all_green() {
@@ -46,9 +48,7 @@ impl Solver {
         o
     }
 
-    fn calculate_guess(allowed: &Vec<String>, possible: &Vec<String>, tc_flag: u32, ms: usize) -> String {
-        let mut best_word = String::new();
-        let mut golf_score = possible.len();
+    fn calculate_guess(allowed: &Vec<String>, possible: &Vec<String>, ms: usize) -> String {
         // If there is a better chance by guessing one of the few remaining words or
         // the number possible is too large for exhaustive search to be worth the time.
         if possible.len() < 3 || possible.len() > ms {
@@ -60,74 +60,30 @@ impl Solver {
                 panic!("Failed to guess!");
             }
         }
-        let mut tc = tc_flag;
-        if tc > possible.len() as u32 * 2 {
-            tc = possible.len() as u32 / 2;
-        }
-        // Limit the use of the multithreaded version to cases where it will likely help.
-        let please_use_threads = tc > 5;
-        for word in allowed {
-            if please_use_threads {
-                // Unfortunately, mutex locking is very expensive in Rust, thread creation seems
-                // much faster, so making tc threads * word count is actually faster than having
-                // a thread pool managed by mutexes. This code uses about 4 seconds for a 24
-                // threads per word in allowed ~50 word list to crunch on a low-end Macbook Pro.
-                // TODO: Figure out the Rustacean's way of not using mutexes where mutexes are
-                //       the C++ way.
-                let hi_score_mut = Arc::new(Mutex::new(0 as usize));
-                let mut join_handles = Vec::new();
-                let lifetime_possibles: Vec<String> = possible.clone();
-                let shared_possibles = Arc::new(lifetime_possibles);
-                let tcu = tc as usize;
-                for offset in 0..tc {
-                    let child_possibles = Arc::clone(&shared_possibles);
-                    let movable_word = word.clone();
-                    let hi_score_shared_mut = hi_score_mut.clone();
-                    join_handles.push(thread::spawn(move || {
-                        let mut i = offset as usize;
-                        while i < child_possibles.len() {
-                            let p = &child_possibles[i];
-                            let r = Oracle::compare(&movable_word, p);
-                            let reduced = Self::reduce_set(&movable_word, r, &child_possibles,
-                                                           false);
-                            let mut hi_score = hi_score_shared_mut.lock().unwrap();
-                            if reduced.len() > *hi_score {
-                                *hi_score = reduced.len();
-                            }
-                            std::mem::drop(hi_score); // manual unlock is needed in loops like this
-                            i += tcu;
-                        }
-                    }));
-                }
-                // Hold here for a sec...
-                for handle in join_handles.into_iter() {
-                    handle.join().unwrap();
-                }
-                // mutex will unlock itself by going out of scope
-                let hi_score = hi_score_mut.lock().unwrap();
-                if *hi_score <= golf_score {
-                    golf_score = *hi_score;
-                    best_word = word.clone();
-                }
-            } else {
-                let mut hi_score = 0 as usize;
-                for p in possible {
-                    let r = Oracle::compare(&word, &p);
-                    let reduced = Self::reduce_set(&word, r, &possible, false);
-                    if reduced.len() > hi_score {
-                        hi_score = reduced.len();
-                    } 
-                }
-                if hi_score <= golf_score {
-                    golf_score = hi_score;
-                    best_word = word.clone();
-                }
+        let best = allowed.par_iter().map(|word| {
+            let mut out = MapOut {
+                hi_score: 0,
+                word: String::from(word)
+            };
+            for p in possible {
+                let r = Oracle::compare(&word, &p);
+                let reduced = Self::reduce_set(&word, r, &possible, false);
+                if reduced.len() > out.hi_score {
+                    out.hi_score = reduced.len();
+                } 
             }
-        }
-        if best_word.is_empty() {
+            out
+        }).reduce(|| MapOut { hi_score: possible.len() + 1, word: String::from("")}, |a, b| {
+            if a.hi_score < b.hi_score {
+                a
+            } else {
+                b
+            }
+        });
+        if best.word.is_empty() {
             panic!("This algorithm doesn't pick words!");
         }
-        best_word
+        best.word
     }
 
     fn reduce_set(guess: &str, reply: Reply, possible: &Vec<String>, loud: bool) -> Vec<String> {

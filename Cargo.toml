@@ -8,6 +8,7 @@ repository = "https://github.com/tbiscuit/wordl-crusher"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+rayon = "*"
 
 [[bin]]
 name = "wordle-crush"
