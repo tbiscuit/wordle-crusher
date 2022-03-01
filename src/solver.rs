@@ -109,10 +109,11 @@ impl Solver {
     }
 
     fn is_feasible(guess: &str, reply: &Reply, word: &str) -> bool {
-        if guess == word {
-            return false; // we know the current guess is not a good next guess
+        if reply.all_green() {
+            // can happen during speculative search.
+            return true;
         }
-        // Green and basic yellow elimination.
+        // Basic elimination, all colors have a basic fact they reveal.
         let mut g_iter = guess.chars();
         let mut w_iter = word.chars();
         for i in 0..5 {
@@ -135,10 +136,18 @@ impl Solver {
                         }
                     }
                 }
+            } else {
+                // Basic gray elimination ask about a letter in exactly this place ange got gray?
+                if let Some(g) = cur_g {
+                   if let Some(w) = cur_w {
+                     if g == w {
+                            return false;
+                        }
+                    }
+                }
             }
         }
-        // Yellow also gets us letter counts to help eliminate some words with duplicate letters,
-        // or to eliminate words that do NOT have duplicate letters that we know to exist.
+        // Create hashmaps, used for gray and dup letter based elimination.
         g_iter = guess.chars();
         let mut guess_map: HashMap<char, u8> = HashMap::new();
         for i in 0..5 {
@@ -157,6 +166,24 @@ impl Solver {
             let e = word_map.entry(w).or_insert(0);
             *e += 1;
         }
+        // Eliminate based on gray
+        g_iter = guess.chars();
+        for i in 0..5 {
+            let cur_g = g_iter.next();
+            if reply.is_gray(i) {
+                if let Some(g) = cur_g {
+                    if word_map.contains_key(&g) && !guess_map.contains_key(&g) {
+                        // We have a gray letter and no yellow or green squares with that letter,
+                        // since it appears in the candidate word, that word cannot be the
+                        // solution.
+                        return false;
+                    }
+                }
+            }
+        }
+        // Finally, try come more complex elimination based on using Yellow + Green together
+        // to eliminate words if we can determine that the word has the wrong number of
+        // duplicates of a duplicated letter.
         g_iter = guess.chars();
         for g in g_iter { // only iterate over constraints provided by the reply to the guess.
             let g_get = guess_map.get(&g);
@@ -172,21 +199,6 @@ impl Solver {
                             // Word should contain at least n copies of this letter.
                             return false;
                         }
-                    }
-                }
-            }
-        }
-        // Finally eliminate based on gray
-        g_iter = guess.chars();
-        for i in 0..5 {
-            let cur_g = g_iter.next();
-            if reply.is_gray(i) {
-                if let Some(g) = cur_g {
-                    if word_map.contains_key(&g) && !guess_map.contains_key(&g) {
-                        // We have a gray letter and no yellow or green squares with that letter,
-                        // since it appears in the candidate word, that word cannot be the
-                        // solution.
-                        return false;
                     }
                 }
             }
