@@ -127,21 +127,13 @@ impl Solver {
                         }
                     }
                 }
-            } else if reply.is_yellow(i) {
-                // Basic yellow elimination, e.g., a yellow r in position 1 means an r cannot be there.
+            } else {
+                // Basic yellow / gray elimination, e.g., a yellow / gray r in position 1 means
+                // an r cannot be there.
                 if let Some(g) = cur_g {
                     if let Some(w) = cur_w {
                         if g == w {
                             return false
-                        }
-                    }
-                }
-            } else {
-                // Basic gray elimination ask about a letter in exactly this place ange got gray?
-                if let Some(g) = cur_g {
-                   if let Some(w) = cur_w {
-                     if g == w {
-                            return false;
                         }
                     }
                 }
