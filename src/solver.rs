@@ -115,10 +115,6 @@ impl Solver {
     }
 
     fn is_feasible(guess: &str, reply: &Reply, word: &str) -> bool {
-        if reply.all_green() {
-            // can happen during speculative search.
-            return true;
-        }
         // Basic elimination, all colors have a basic fact they reveal.
         let mut g_iter = guess.chars();
         let mut w_iter = word.chars();
