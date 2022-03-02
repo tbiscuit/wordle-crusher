@@ -4,6 +4,7 @@ pub struct Solver {
     allowed: Vec<String>,
     possible: Vec<String>,
     loud_mode: bool,
+    hard_mode: bool,
     max_search: usize,
 }
 
@@ -18,28 +19,33 @@ use std::collections::HashMap;
 use rayon::prelude::*;
 
 impl Solver {
-    pub fn create(a: Vec<String>, p: Vec<String>, ms: u32, l: bool) -> Solver{
+    pub fn create(a: Vec<String>, p: Vec<String>, ms: u32, h: bool, l: bool) -> Solver{
         println!("Solver created with {} length to begin exhaustive search, verbose = {}", ms, l);
         Solver {
             allowed: a,
             possible: p,
             loud_mode: l,
+            hard_mode: h,
             max_search: ms as usize,
         }
     }
 
     pub fn solve(&self, oracle: Oracle) -> Vec<String> {
         let mut known_possible = self.possible.clone();
+        let mut mut_allowed = self.allowed.clone();
         let mut o: Vec<String> = Vec::new();
         let mut death_clock = 0;
         loop {
-            let good_guess = Self::calculate_guess(&self.allowed, &known_possible, self.max_search);
+            let good_guess = Self::calculate_guess(&mut_allowed, &known_possible, self.max_search);
             o.push(good_guess.clone());
             let reply = oracle.guess(&good_guess);
             if reply.all_green() {
                 break;
             }
-            known_possible = Self::reduce_set(&good_guess, reply, &known_possible, self.loud_mode);
+            known_possible = Self::reduce_set(&good_guess, &reply, &known_possible, self.loud_mode);
+            if self.hard_mode {
+                mut_allowed = Self::reduce_set(&good_guess, &reply, &mut_allowed, false);
+            }
             death_clock += 1;
             if death_clock > 12 {
                 panic!("Solver is terrible and has been sacked!");
@@ -67,7 +73,7 @@ impl Solver {
             };
             for p in possible {
                 let r = Oracle::compare(&word, &p);
-                let reduced = Self::reduce_set(&word, r, &possible, false);
+                let reduced = Self::reduce_set(&word, &r, &possible, false);
                 if reduced.len() > out.hi_score {
                     out.hi_score = reduced.len();
                 } 
@@ -86,7 +92,7 @@ impl Solver {
         best.word
     }
 
-    fn reduce_set(guess: &str, reply: Reply, possible: &Vec<String>, loud: bool) -> Vec<String> {
+    fn reduce_set(guess: &str, reply: &Reply, possible: &Vec<String>, loud: bool) -> Vec<String> {
         let mut known_possible = Vec::new();
         for word in possible {
             if Self::is_feasible(guess, &reply, &word) {

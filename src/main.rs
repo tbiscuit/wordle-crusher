@@ -92,6 +92,15 @@ fn loud_mode(args: &Vec<String>) -> bool {
     false
 }
 
+fn hard_mode(args: &Vec<String>) -> bool {
+    for arg in args.iter() {
+        if arg == "--hard" {
+            return true;
+        }
+    }
+    false
+}
+
 use std::env;
 use std::collections::HashMap;
 
@@ -103,6 +112,7 @@ fn main() {
     let wordl_allowed = load_list_from_file(&allowed_guesses_fname(&args));
     let wordl_possible = load_list_from_file(&possible_guesses_fname(&args));
     let verbose = loud_mode(&args);
+    let hard_mode = hard_mode(&args);
     println!("Loaded {} wordl allowed words, with {} possible solutions",
              wordl_allowed.len(), wordl_possible.len());
     let try_words = wordl_possible.clone();
@@ -111,7 +121,7 @@ fn main() {
     if let Ok(n) = msa {
         ms = n;
     }
-    let solver = Solver::create(wordl_allowed.clone(), wordl_possible.clone(), ms, verbose);
+    let solver = Solver::create(wordl_allowed.clone(), wordl_possible.clone(), ms, hard_mode, verbose);
     let mut histogram: HashMap<usize, u32> = HashMap::new();
     let mut total_guesses: u32 = 0;
     let mut max_for_one_word: u32 = 0;
