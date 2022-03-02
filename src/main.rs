@@ -35,7 +35,12 @@ fn load_list_from_file(fname: &str) -> Vec<String> {
     if let Ok(raw_text) = raw_text_or_err {
         let raw_list = raw_text.split("\n");
         for entry in raw_list {
-            o.push(entry.trim().to_string());
+            let word = entry.trim().to_string();
+            if word.len() == 5 {
+                o.push(word);
+            } else {
+                println!("{} found in file and ignored!", word);
+            }
         }
     } else {
         let open_char = fname.chars().next().unwrap();
